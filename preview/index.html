@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Academic System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root { --primary-color: #0d6efd; }
+        html, body { height: 100%; }
+        body { display: flex; flex-direction: column; background-color: #f5f6fa; }
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0;
+        }
+        .hero-section h1 { font-size: 3.5rem; font-weight: 700; margin-bottom: 20px; }
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 2px solid transparent;
+        }
+        .feature-card:hover { transform: translateY(-10px); border-color: #667eea; }
+        .feature-icon {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 25px; color: white; font-size: 2rem;
+        }
+        .stat-card {
+            background: white; border-radius: 15px; padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--primary-color);
+        }
+        .stat-card.success { border-left-color: #198754; }
+        .stat-card.info { border-left-color: #0dcaf0; }
+        .stat-card.warning { border-left-color: #ffc107; }
+        .grade-badge { padding: 6px 15px; border-radius: 25px; font-weight: 600; font-size: 0.9rem; }
+        .grade-a, .grade-a-plus { background-color: #d4edda; color: #155724; }
+        .grade-b, .grade-b-plus { background-color: #d1ecf1; color: #0c5460; }
+        .grade-c { background-color: #fff3cd; color: #856404; }
+        .grade-d, .grade-f { background-color: #f8d7da; color: #721c24; }
+        .login-card {
+            background: white; border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow: hidden; max-width: 450px; margin: 0 auto;
+        }
+        .login-card .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 40px 30px; text-align: center;
+        }
+        .table-card {
+            background: white; border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .access-denied {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .access-card {
+            background: white; border-radius: 20px; padding: 60px;
+            text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            max-width: 500px;
+        }
+        .menu-card {
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        .menu-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .logged-in-badge {
+            position: fixed; top: 80px; right: 20px;
+            background: #28a745; color: white;
+            padding: 8px 20px; border-radius: 25px;
+            font-weight: 600; z-index: 9999;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="logged-in-badge" class="logged-in-badge" style="display:none;">
+        <i class="bi bi-person-check me-2"></i><span id="user-name"></span>
+        <button onclick="logout()" class="btn btn-sm btn-light ms-3"><i class="bi bi-box-arrow-right"></i></button>
+    </div>
+
+    <div id="app"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Mock Database
+        const users = {
+            'admin': { password: 'admin123', role: 'admin', name: 'Administrator', email: 'admin@school.edu' },
+            'student1': { password: 'student123', role: 'student', name: 'John Doe', roll: 'R001', class: '10th Grade', email: 'student1@school.edu', phone: '9876543210' },
+            'student2': { password: 'student123', role: 'student', name: 'Sarah Smith', roll: 'R002', class: '10th Grade', email: 'student2@school.edu', phone: '9876543211' },
+            'student3': { password: 'student123', role: 'student', name: 'Mike Johnson', roll: 'R003', class: '11th Grade', email: 'student3@school.edu', phone: '9876543212' }
+        };
+
+        const marksData = {
+            'student1': [
+                { subject: 'Mathematics', code: 'MATH101', max: 100, pass: 40, obtained: 85, grade: 'A' },
+                { subject: 'Science', code: 'SCI101', max: 100, pass: 40, obtained: 78, grade: 'B+' },
+                { subject: 'English', code: 'ENG101', max: 100, pass: 40, obtained: 72, grade: 'B' },
+                { subject: 'History', code: 'HIS101', max: 100, pass: 40, obtained: 80, grade: 'A' },
+                { subject: 'Geography', code: 'GEO101', max: 100, pass: 40, obtained: 75, grade: 'B+' },
+                { subject: 'Computer Science', code: 'COMP101', max: 100, pass: 40, obtained: 82, grade: 'A' }
+            ],
+            'student2': [
+                { subject: 'Mathematics', code: 'MATH101', max: 100, pass: 40, obtained: 92, grade: 'A+' },
+                { subject: 'Science', code: 'SCI101', max: 100, pass: 40, obtained: 88, grade: 'A' },
+                { subject: 'English', code: 'ENG101', max: 100, pass: 40, obtained: 85, grade: 'A' },
+                { subject: 'History', code: 'HIS101', max: 100, pass: 40, obtained: 79, grade: 'B+' },
+                { subject: 'Geography', code: 'GEO101', max: 100, pass: 40, obtained: 81, grade: 'A' },
+                { subject: 'Computer Science', code: 'COMP101', max: 100, pass: 40, obtained: 90, grade: 'A+' }
+            ],
+            'student3': [
+                { subject: 'Mathematics', code: 'MATH101', max: 100, pass: 40, obtained: 65, grade: 'B' },
+                { subject: 'Science', code: 'SCI101', max: 100, pass: 40, obtained: 58, grade: 'C' },
+                { subject: 'English', code: 'ENG101', max: 100, pass: 40, obtained: 70, grade: 'B' },
+                { subject: 'History', code: 'HIS101', max: 100, pass: 40, obtained: 62, grade: 'B' },
+                { subject: 'Geography', code: 'GEO101', max: 100, pass: 40, obtained: 55, grade: 'C' },
+                { subject: 'Computer Science', code: 'COMP101', max: 100, pass: 40, obtained: 75, grade: 'B+' }
+            ]
+        };
+
+        let currentUser = null;
+
+        function renderApp() {
+            const app = document.getElementById('app');
+            
+            if (!currentUser) {
+                renderLogin();
+            } else if (currentUser.role === 'admin') {
+                renderAdminDashboard();
+            } else {
+                renderStudentDashboard();
+            }
+            
+            updateLoggedInBadge();
+        }
+
+        function updateLoggedInBadge() {
+            const badge = document.getElementById('logged-in-badge');
+            const userName = document.getElementById('user-name');
+            
+            if (currentUser) {
+                badge.style.display = 'block';
+                userName.textContent = currentUser.name + ' (' + (currentUser.role === 'admin' ? 'Admin' : 'Student') + ')';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function renderLogin() {
+            document.getElementById('app').innerHTML = `
+                <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="container">
+                        <a class="navbar-brand" href="#"><i class="bi bi-mortarboard-fill me-2"></i>Online Academic</a>
+                    </div>
+                </nav>
+                
+                <!-- Landing Section -->
+                <div class="hero-section">
+                    <div class="container text-center">
+                        <h1>Online Academic System</h1>
+                        <p class="lead mb-4">A comprehensive platform for managing student records, marks, and academic performance</p>
+                        <div class="row justify-content-center mt-5">
+                            <div class="col-md-4 mb-4">
+                                <div class="feature-card">
+                                    <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+                                    <h4>Secure Access</h4>
+                                    <p class="text-muted">Role-based authentication with password protection</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="feature-card">
+                                    <div class="feature-icon"><i class="bi bi-clipboard-data"></i></div>
+                                    <h4>Mark Management</h4>
+                                    <p class="text-muted">Efficiently manage and track student marks</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="feature-card">
+                                    <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                                    <h4>Performance Tracking</h4>
+                                    <p class="text-muted">Monitor academic progress with reports</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Login Section -->
+                <div class="container py-5">
+                    <div class="row justify-content-center">
+                        <div class="col-md-5">
+                            <div class="login-card">
+                                <div class="card-header">
+                                    <i class="bi bi-mortarboard-fill fs-1 mb-3 d-block"></i>
+                                    <h3 class="mb-0">Welcome Back</h3>
+                                    <p class="mb-0 opacity-75">Sign in to your account</p>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div id="login-error" class="alert alert-danger" style="display:none;"></div>
+                                    <form onsubmit="handleLogin(event)">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" id="username" placeholder="Username" required>
+                                            <label for="username"><i class="bi bi-person me-2"></i>Username</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input type="password" class="form-control" id="password" placeholder="Password" required>
+                                            <label for="password"><i class="bi bi-lock me-2"></i>Password</label>
+                                        </div>
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary btn-lg">
+                                                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                                            </button>
+                                        </div>
+                                    </form>
+                                    <hr class="my-4">
+                                    <div class="text-center">
+                                        <p class="text-muted mb-2"><small>Demo Credentials</small></p>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <div class="border rounded p-2">
+                                                    <small class="d-block text-muted">Admin</small>
+                                                    <code class="small">admin / admin123</code>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="border rounded p-2">
+                                                    <small class="d-block text-muted">Student</small>
+                                                    <code class="small">student1 / student123</code>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('login-error');
+            
+            if (users[username] && users[username].password === password) {
+                currentUser = { username, ...users[username] };
+                errorDiv.style.display = 'none';
+                renderApp();
+            } else {
+                errorDiv.textContent = 'Invalid username or password.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            renderApp();
+        }
+
+        function calculateStats(marks) {
+            const total = marks.reduce((sum, m) => sum + m.obtained, 0);
+            const maxTotal = marks.reduce((sum, m) => sum + m.max, 0);
+            const percentage = ((total / maxTotal) * 100).toFixed(1);
+            const passed = marks.filter(m => m.obtained >= m.pass).length;
+            
+            let overallGrade = 'F';
+            if (percentage >= 90) overallGrade = 'A+';
+            else if (percentage >= 80) overallGrade = 'A';
+            else if (percentage >= 70) overallGrade = 'B+';
+            else if (percentage >= 60) overallGrade = 'B';
+            else if (percentage >= 50) overallGrade = 'C';
+            else if (percentage >= 40) overallGrade = 'D';
+            
+            return { total, maxTotal, percentage, passed, overallGrade };
+        }
+
+        function renderStudentDashboard() {
+            const marks = marksData[currentUser.username] || [];
+            const stats = calculateStats(marks);
+            
+            document.getElementById('app').innerHTML = `
+                <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                    <div class="container">
+                        <a class="navbar-brand" href="#"><i class="bi bi-mortarboard-fill me-2"></i>Online Academic</a>
+                        <div class="collapse navbar-collapse">
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-speedometer2 me-1"></i>My Dashboard</a></li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-person-circle me-1"></i>${currentUser.name}
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="#" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+                
+                <div class="container py-4">
+                    <h2 class="mb-4"><i class="bi bi-speedometer2 me-2"></i>Welcome, ${currentUser.name}</h2>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header bg-white"><h5 class="mb-0"><i class="bi bi-person-circle me-2"></i>Student Information</h5></div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3"><p class="mb-1 text-muted"><small>Roll Number</small></p><p class="fw-bold">${currentUser.roll}</p></div>
+                                <div class="col-md-3"><p class="mb-1 text-muted"><small>Class</small></p><p class="fw-bold">${currentUser.class}</p></div>
+                                <div class="col-md-3"><p class="mb-1 text-muted"><small>Email</small></p><p class="fw-bold">${currentUser.email}</p></div>
+                                <div class="col-md-3"><p class="mb-1 text-muted"><small>Phone</small></p><p class="fw-bold">${currentUser.phone}</p></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="d-flex justify-content-between">
+                                    <div><p class="text-muted mb-1">Total Subjects</p><h3>${marks.length}</h3></div>
+                                    <i class="bi bi-book fs-1 text-primary opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card success">
+                                <div class="d-flex justify-content-between">
+                                    <div><p class="text-muted mb-1">Passed</p><h3>${stats.passed}</h3></div>
+                                    <i class="bi bi-check-circle fs-1 text-success opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card info">
+                                <div class="d-flex justify-content-between">
+                                    <div><p class="text-muted mb-1">Percentage</p><h3>${stats.percentage}%</h3></div>
+                                    <i class="bi bi-percent fs-1 text-info opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card warning">
+                                <div class="d-flex justify-content-between">
+                                    <div><p class="text-muted mb-1">Grade</p><h3>${stats.overallGrade}</h3></div>
+                                    <i class="bi bi-award fs-1 text-warning opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-card">
+                        <div class="card-header p-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-clipboard-data me-2"></i>My Academic Scores</h5>
+                            <button class="btn btn-outline-primary btn-sm" onclick="alert('Printing marksheet...')"><i class="bi bi-printer me-1"></i>Print Marksheet</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th class="text-center">Max</th>
+                                        <th class="text-center">Pass</th>
+                                        <th class="text-center">Obtained</th>
+                                        <th class="text-center">%</th>
+                                        <th class="text-center">Grade</th>
+                                        <th class="text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${marks.map(m => `
+                                        <tr>
+                                            <td><code>${m.code}</code> ${m.subject}</td>
+                                            <td class="text-center">${m.max}</td>
+                                            <td class="text-center">${m.pass}</td>
+                                            <td class="text-center fw-bold">${m.obtained}</td>
+                                            <td class="text-center">${((m.obtained/m.max)*100).toFixed(0)}%</td>
+                                            <td class="text-center"><span class="grade-badge grade-${m.grade.toLowerCase().replace('+', '-plus')}">${m.grade}</span></td>
+                                            <td class="text-center"><span class="badge bg-${m.obtained >= m.pass ? 'success' : 'danger'}">${m.obtained >= m.pass ? 'Pass' : 'Fail'}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                                <tfoot class="table-primary fw-bold">
+                                    <tr>
+                                        <td colspan="3" class="text-end">Overall Total:</td>
+                                        <td class="text-center">${stats.total} / ${stats.maxTotal}</td>
+                                        <td class="text-center">${stats.percentage}%</td>
+                                        <td class="text-center"><span class="grade-badge grade-${stats.overallGrade.toLowerCase().replace('+', '-plus')}">${stats.overallGrade}</span></td>
+                                        <td class="text-center"><span class="badge bg-${stats.passed === marks.length ? 'success' : 'warning'}">${stats.passed === marks.length ? 'Passed All' : stats.passed + '/' + marks.length + ' Passed'}</span></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAdminDashboard() {
+            const allStudents = Object.entries(users).filter(([k, v]) => v.role === 'student');
+            
+            document.getElementById('app').innerHTML = `
+                <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                    <div class="container">
+                        <a class="navbar-brand" href="#"><i class="bi bi-mortarboard-fill me-2"></i>Online Academic</a>
+                        <div class="collapse navbar-collapse">
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-item"><a class="nav-link active" href="#" onclick="renderAdminDashboard()"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+                                <li class="nav-item"><a class="nav-link" href="#" onclick="renderAdminStudents()"><i class="bi bi-people me-1"></i>Students</a></li>
+                                <li class="nav-item"><a class="nav-link" href="#" onclick="renderAdminMarks()"><i class="bi bi-clipboard-data me-1"></i>Marks</a></li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-person-circle me-1"></i>${currentUser.name}
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="#" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+                
+                <div class="container py-4">
+                    <h2 class="mb-4"><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</h2>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Total Students</p>
+                                        <h3>${allStudents.length}</h3>
+                                        <small class="text-success"><i class="bi bi-check-circle me-1"></i>${allStudents.length} Active</small>
+                                    </div>
+                                    <i class="bi bi-people fs-1 text-primary opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card success">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Total Subjects</p>
+                                        <h3>6</h3>
+                                        <small class="text-success"><i class="bi bi-check-circle me-1"></i>6 Active</small>
+                                    </div>
+                                    <i class="bi bi-book fs-1 text-success opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card info">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Total Marks</p>
+                                        <h3>${allStudents.length * 6}</h3>
+                                        <small class="text-muted">Records</small>
+                                    </div>
+                                    <i class="bi bi-clipboard-data fs-1 text-info opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card warning">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Quick Actions</p>
+                                        <button class="btn btn-sm btn-outline-primary mb-1 d-block w-100" onclick="renderAdminStudents()"><i class="bi bi-plus-lg me-1"></i>Add Student</button>
+                                        <button class="btn btn-sm btn-outline-success d-block w-100" onclick="renderAdminMarks()"><i class="bi bi-plus-lg me-1"></i>Add Marks</button>
+                                    </div>
+                                    <i class="bi bi-lightning fs-1 text-warning opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-card">
+                        <div class="card-header p-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-people me-2"></i>All Students</h5>
+                            <button class="btn btn-primary btn-sm" onclick="renderAdminStudents()"><i class="bi bi-plus-lg me-1"></i>Add Student</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Roll No</th>
+                                        <th>Class</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${allStudents.map(([username, student]) => `
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width:32px;height:32px">
+                                                        ${student.name.charAt(0)}
+                                                    </div>
+                                                    ${student.name}
+                                                </div>
+                                            </td>
+                                            <td><code>${student.roll}</code></td>
+                                            <td>${student.class}</td>
+                                            <td>${student.email}</td>
+                                            <td><span class="badge bg-success">Active</span></td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAdminStudents() {
+            const allStudents = Object.entries(users).filter(([k, v]) => v.role === 'student');
+            
+            document.getElementById('app').innerHTML = `
+                <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                    <div class="container">
+                        <a class="navbar-brand" href="#"><i class="bi bi-mortarboard-fill me-2"></i>Online Academic</a>
+                        <div class="collapse navbar-collapse">
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-item"><a class="nav-link" href="#" onclick="renderAdminDashboard()"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+                                <li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-people me-1"></i>Students</a></li>
+                                <li class="nav-item"><a class="nav-link" href="#" onclick="renderAdminMarks()"><i class="bi bi-clipboard-data me-1"></i>Marks</a></li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-person-circle me-1"></i>${currentUser.name}
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="#" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+                
+                <div class="container py-4">
+                    <h2 class="mb-4"><i class="bi bi-people me-2"></i>Manage Students</h2>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header"><h5 class="mb-0"><i class="bi bi-plus-lg me-2"></i>Add New Student</h5></div>
+                        <div class="card-body">
+                            <form onsubmit="event.preventDefault(); alert('Student added successfully!'); renderAdminStudents();">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Full Name</label>
+                                        <input type="text" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Username</label>
+                                        <input type="text" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Roll Number</label>
+                                        <input type="text" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Class</label>
+                                        <input type="text" class="form-control" placeholder="e.g., 10th Grade">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Phone</label>
+                                        <input type="tel" class="form-control">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Add Student</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="table-card">
+                        <div class="card-header p-3 border-bottom">
+                            <h5 class="mb-0"><i class="bi bi-people me-2"></i>All Students</h5>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Username</th>
+                                        <th>Roll Number</th>
+                                        <th>Class</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${allStudents.map(([username, student], index) => `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width:32px;height:32px">
+                                                        ${student.name.charAt(0)}
+                                                    </div>
+                                                    ${student.name}
+                                                </div>
+                                            </td>
+                                            <td>${username}</td>
+                                            <td><code>${student.roll}</code></td>
+                                            <td>${student.class}</td>
+                                            <td><span class="badge bg-success">Active</span></td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="alert('Student deleted!')"><i class="bi bi-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAdminMarks() {
+            const allStudents = Object.entries(users).filter(([k, v]) => v.role === 'student');
+            
+            document.getElementById('app').innerHTML = `
+                <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                    <div class="container">
+                        <a class="navbar-brand" href="#"><i class="bi bi-mortarboard-fill me-2"></i>Online Academic</a>
+                        <div class="collapse navbar-collapse">
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-item"><a class="nav-link" href="#" onclick="renderAdminDashboard()"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+                                <li class="nav-item"><a class="nav-link" href="#" onclick="renderAdminStudents()"><i class="bi bi-people me-1"></i>Students</a></li>
+                                <li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-clipboard-data me-1"></i>Marks</a></li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-person-circle me-1"></i>${currentUser.name}
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="#" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+                
+                <div class="container py-4">
+                    <h2 class="mb-4"><i class="bi bi-clipboard-data me-2"></i>Manage Marks</h2>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header"><h5 class="mb-0"><i class="bi bi-plus-lg me-2"></i>Add New Marks</h5></div>
+                        <div class="card-body">
+                            <form onsubmit="event.preventDefault(); alert('Marks saved successfully!'); renderAdminMarks();">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Student</label>
+                                        <select class="form-select" required>
+                                            <option value="">Select Student</option>
+                                            ${allStudents.map(([username, student]) => `
+                                                <option value="${username}">${student.name} (${student.roll})</option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Subject</label>
+                                        <select class="form-select" required>
+                                            <option value="">Select Subject</option>
+                                            <option>Mathematics (MATH101)</option>
+                                            <option>Science (SCI101)</option>
+                                            <option>English (ENG101)</option>
+                                            <option>History (HIS101)</option>
+                                            <option>Geography (GEO101)</option>
+                                            <option>Computer Science (COMP101)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Marks Obtained</label>
+                                        <input type="number" class="form-control" min="0" max="100" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Exam Type</label>
+                                        <select class="form-select">
+                                            <option>Midterm</option>
+                                            <option selected>Final</option>
+                                            <option>Quiz</option>
+                                            <option>Assignment</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Exam Date</label>
+                                        <input type="date" class="form-control" value="${new Date().toISOString().split('T')[0]}">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Marks</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="table-card">
+                        <div class="card-header p-3 border-bottom">
+                            <h5 class="mb-0"><i class="bi bi-clipboard-data me-2"></i>All Marks</h5>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Subject</th>
+                                        <th class="text-center">Marks</th>
+                                        <th class="text-center">Grade</th>
+                                        <th>Exam Type</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${allStudents.flatMap(([username, student]) => 
+                                        (marksData[username] || []).map(mark => `
+                                            <tr>
+                                                <td>${student.name}</td>
+                                                <td>${mark.subject}</td>
+                                                <td class="text-center fw-bold">${mark.obtained} / ${mark.max}</td>
+                                                <td class="text-center"><span class="grade-badge grade-${mark.grade.toLowerCase().replace('+', '-plus')}">${mark.grade}</span></td>
+                                                <td>Final</td>
+                                                <td class="text-center">
+                                                    <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="alert('Marks deleted!')"><i class="bi bi-trash"></i></button>
+                                                </td>
+                                            </tr>
+                                        `)
+                                    ).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize app
+        renderApp();
+    </script>
+</body>
+</html>
